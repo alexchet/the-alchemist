@@ -40,9 +40,10 @@ function avatar_save() {
 }
 
 function avatar_reset() {
-  avatar.x = 1;
-  avatar.y = 1;
-  avatar.facing = "south";
+  var start = atlas.maps[0];
+  avatar.x      = (start.start_x      !== undefined) ? start.start_x      : 1;
+  avatar.y      = (start.start_y      !== undefined) ? start.start_y      : 1;
+  avatar.facing = (start.start_facing !== undefined) ? start.start_facing : "south";
   avatar.moved = false;
   avatar.map_id = 0;
   avatar.weapon = 0;
@@ -51,11 +52,11 @@ function avatar_reset() {
   avatar.max_hp = 25;
   avatar.mp = 4;
   avatar.max_mp = 4;
-  avatar.gold = 0;
+  avatar.gold = 10000;
   avatar.bonus_atk = 0;
   avatar.bonus_def = 0;
   avatar.spellbook = 0;
-  avatar.sleeploc = [0,1,1]; // map_id, x, y
+  avatar.sleeploc = [0, avatar.x, avatar.y];
   avatar.campaign = new Array();
 }
 

@@ -5,7 +5,7 @@
 
 var explore = new Object();
 explore.encounter_chance = 0;
-explore.encounter_increment = .05;
+explore.encounter_increment = .00;
 explore.encounter_max = .30;
 explore.message = "";
 
