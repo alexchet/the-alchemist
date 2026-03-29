@@ -12,37 +12,29 @@
  *   3. Find connector tiles — walls adjacent to two different regions
  *   4. Randomly open connectors until every region is joined
  *   5. Remove dead ends (open tiles with only one exit)
+ *   6. Find room connections — FLOOR tiles adjacent to room CEIL tiles
+ *
+ * Map structure:
+ *   atlas.maps[0]   = corridor/maze map (room footprints are solid walls)
+ *   atlas.maps[1..N] = one map per room, with exits back to the corridor
  *
  * Tile legend:
- *   0  = empty (no tile)
  *   1  = dungeon_floor    (walkable)  -- maze corridors
- *   2  = dungeon_wall     (blocked)   -- standard wall
- *   3  = dungeon_door     (walkable)  -- region junction
+ *   2  = dungeon_wall     (blocked)
  *   5  = dungeon_ceiling  (walkable)  -- roofed room interior
  */
 
-// Keep MAP_COUNT at 11 so saved-game map IDs don't crash on load.
-var MAP_COUNT = 11;
-
 var atlas = new Object();
 atlas.maps = new Array();
-
-for (var i = 0; i < MAP_COUNT; i++) {
-  atlas.maps[i] = new Object();
-  atlas.maps[i].exits   = new Array();
-  atlas.maps[i].enemies = new Array();
-  atlas.maps[i].shops   = new Array();
-}
 
 (function() {
   // Stage dimensions must be odd for the maze algorithm to align correctly.
   var W = 41, H = 41;
 
-  var WALL   = 2;
-  var FLOOR  = 1;   // maze corridors
-  var CEIL   = 5;   // roofed room interior
-  var DOOR   = 3;   // region junction
-  // var CORNER = 4;   // convex wall corner column (unused)
+  var WALL  = 2;
+  var FLOOR = 1;
+  var CEIL  = 5;
+  var DOOR  = 3;
 
   var NUM_ROOM_TRIES         = 150;
   var ROOM_EXTRA_SIZE        = 0;   // increase for larger rooms
@@ -278,28 +270,38 @@ for (var i = 0; i < MAP_COUNT; i++) {
     }
   }
 
-  // ----------------------------------------------------------- place doors --
-  // Run after dead ends are removed. A FLOOR tile becomes a DOOR when it sits
-  // at the mouth of a 1-tile-wide corridor leading into a room (CEIL):
-  //   - one cardinal neighbour is CEIL, AND
-  //   - both sides of the perpendicular axis are WALL.
-  // This guarantees exactly one door per corridor-to-room entry.
+  // ---------------------------------------------------- find connections ---
+  // Scans each room's perimeter for FLOOR tiles in the full grid.
+  // Each such tile is a corridor-to-room junction point.
+  // approach = which side of the room the corridor is on.
 
-  function add_doors() {
-    // A FLOOR tile becomes a DOOR only when it is the mouth of a 1-tile-wide
-    // corridor approaching a room from the south (room to the north, tn===CEIL)
-    // or from the east (room to the west, tw===CEIL).
-    // Using one canonical direction per axis guarantees exactly one door per
-    // corridor-to-room connection regardless of corridor length.
-    for (var y = 1; y < H - 1; y++) {
-      for (var x = 1; x < W - 1; x++) {
-        if (get_tile(x, y) !== FLOOR) continue;
-        var tn = get_tile(x, y - 1), ts = get_tile(x, y + 1);
-        var te = get_tile(x + 1, y), tw = get_tile(x - 1, y);
-        if (tn === CEIL && te === WALL && tw === WALL) { set_tile(x, y, DOOR); continue; }
-        if (tw === CEIL && tn === WALL && ts === WALL) { set_tile(x, y, DOOR); }
+  function find_connections() {
+    var connections = [];
+    for (var r = 0; r < rooms.length; r++) {
+      var room = rooms[r];
+
+      // North side: corridor above the room (low y in grid = north on screen)
+      for (var x = room.x; x < room.x + room.w; x++) {
+        if (get_tile(x, room.y - 1) === FLOOR)
+          connections.push({ cx: x, cy: room.y - 1, room_idx: r, approach: "north" });
+      }
+      // South side: corridor below the room
+      for (var x = room.x; x < room.x + room.w; x++) {
+        if (get_tile(x, room.y + room.h) === FLOOR)
+          connections.push({ cx: x, cy: room.y + room.h, room_idx: r, approach: "south" });
+      }
+      // West side: corridor left of the room
+      for (var y = room.y; y < room.y + room.h; y++) {
+        if (get_tile(room.x - 1, y) === FLOOR)
+          connections.push({ cx: room.x - 1, cy: y, room_idx: r, approach: "west" });
+      }
+      // East side: corridor right of the room
+      for (var y = room.y; y < room.y + room.h; y++) {
+        if (get_tile(room.x + room.w, y) === FLOOR)
+          connections.push({ cx: room.x + room.w, cy: y, room_idx: r, approach: "east" });
       }
     }
+    return connections;
   }
 
   // --------------------------------------------------------------- run it --
@@ -316,37 +318,169 @@ for (var i = 0; i < MAP_COUNT; i++) {
 
   connect_regions();
   remove_dead_ends();
-  add_doors();
+
+  var connections = find_connections();
+
+  // -------------------------------------------------- build corridor grid --
+  // Room interiors (CEIL) become solid wall. Connection tiles stay FLOOR for
+  // now — they will be changed to DOOR during exit wiring below.
+
+  var corridor_grid = [];
+  for (var y = 0; y < H; y++) {
+    corridor_grid[y] = [];
+    for (var x = 0; x < W; x++) {
+      corridor_grid[y][x] = (grid[y][x] === CEIL) ? WALL : grid[y][x];
+    }
+  }
+
+  // ---------------------------------------------------- build room grids --
+  // Each room gets a clean rectangular map: CEIL interior, WALL border.
+  // Size = (room.w + 2) x (room.h + 2) to include the wall border.
+
+  var room_grids      = [];
+  var room_exits_list = [];
+
+  for (var r = 0; r < rooms.length; r++) {
+    var room = rooms[r];
+    var rw = room.w + 2;
+    var rh = room.h + 2;
+    var rg = [];
+    for (var y = 0; y < rh; y++) {
+      rg[y] = [];
+      for (var x = 0; x < rw; x++) {
+        rg[y][x] = (x === 0 || x === rw - 1 || y === 0 || y === rh - 1) ? WALL : CEIL;
+      }
+    }
+    room_grids.push(rg);
+    room_exits_list.push([]);
+  }
+
+  // ------------------------------------------------------ wire up exits --
+  //
+  // For each connection (corridor tile adjacent to a room):
+  //
+  //   Corridor exit: stepping on the junction tile (cx, cy) teleports the
+  //   player into the room map at spawn_x/spawn_y (one step inside the room
+  //   from the entry wall so they don't immediately re-exit).
+  //
+  //   Room exit: stepping on exit_x/exit_y (the interior tile against the
+  //   entry wall) teleports the player back to the corridor at ret_x/ret_y
+  //   (one step away from the junction, deeper into the corridor).
+  //
+  // Local room coords use a 1-tile wall border offset:
+  //   local_x = global_x - room.x + 1
+  //   local_y = global_y - room.y + 1
+
+  var corridor_exits = [];
+  var start_x = -1, start_y = -1;
+
+  for (var i = 0; i < connections.length; i++) {
+    var conn = connections[i];
+    var cx = conn.cx, cy = conn.cy;
+    var r = conn.room_idx;
+    var room = rooms[r];
+    var dest_map = r + 1; // room maps start at atlas index 1
+
+    // wall_dx/wall_dy: the WALL tile in the corridor grid that becomes a DOOR.
+    // This is the room's outer face — the tile that would block the corridor.
+    // Mirrors the original atlas where doors replace wall tiles, not floor tiles.
+    var wall_dx, wall_dy;
+
+    // exit_x/exit_y: the border WALL tile in the room map that becomes a DOOR.
+    // spawn_x/spawn_y: the first interior CEIL tile — where the player lands.
+    var spawn_x, spawn_y;
+    var exit_x,  exit_y;
+
+    switch (conn.approach) {
+      case "north": // corridor above room (cy = room.y - 1)
+        var lx  = cx - room.x + 1;
+        wall_dx = cx;                wall_dy = room.y;           // north face of room footprint
+        exit_x  = lx;               exit_y  = 0;                // north border wall of room map
+        spawn_x = lx;               spawn_y = 1;                // first interior row
+        break;
+
+      case "south": // corridor below room (cy = room.y + room.h)
+        var lx  = cx - room.x + 1;
+        wall_dx = cx;                wall_dy = room.y + room.h - 1; // south face of room footprint
+        exit_x  = lx;               exit_y  = room.h + 1;          // south border wall of room map
+        spawn_x = lx;               spawn_y = room.h;               // last interior row
+        break;
+
+      case "west": // corridor left of room (cx = room.x - 1)
+        var ly  = cy - room.y + 1;
+        wall_dx = room.x;            wall_dy = cy;               // west face of room footprint
+        exit_x  = 0;                 exit_y  = ly;               // west border wall of room map
+        spawn_x = 1;                 spawn_y = ly;               // first interior column
+        break;
+
+      case "east": // corridor right of room (cx = room.x + room.w)
+        var ly  = cy - room.y + 1;
+        wall_dx = room.x + room.w - 1; wall_dy = cy;            // east face of room footprint
+        exit_x  = room.w + 1;          exit_y  = ly;            // east border wall of room map
+        spawn_x = room.w;               spawn_y = ly;            // last interior column
+        break;
+    }
+
+    // The connection tile (cx, cy) is the floor tile just outside the door.
+    // It stays as FLOOR and serves as the return landing position from the room.
+    if (start_x === -1) { start_x = cx; start_y = cy; }
+
+    // Door goes into the corridor wall face — replaces WALL with DOOR.
+    corridor_grid[wall_dy][wall_dx] = DOOR;
+
+    // Door goes into the room border wall — replaces the border WALL with DOOR.
+    room_grids[r][exit_y][exit_x] = DOOR;
+
+    // Corridor exit: step on door in wall → land on first interior tile of room.
+    corridor_exits.push({
+      exit_x: wall_dx, exit_y: wall_dy,
+      dest_map: dest_map,
+      dest_x: spawn_x,  dest_y: spawn_y
+    });
+
+    // Room exit: step on border door → land back on the corridor floor tile (cx, cy).
+    room_exits_list[r].push({
+      exit_x: exit_x,  exit_y: exit_y,
+      dest_map: 0,
+      dest_x: cx,      dest_y: cy
+    });
+  }
+
+  // Fallback start if no connections were found (degenerate generation).
+  if (start_x === -1) { start_x = 1; start_y = 1; }
 
   // ================================================= store atlas data ==
 
-  var start = rooms.length > 0
-    ? rooms[0]
-    : { cx: Math.floor(W / 2), cy: Math.floor(H / 2) };
+  // Map 0: the corridor/maze
+  atlas.maps[0] = {
+    name:          "Dungeon",
+    music:         "elegy_dm",
+    width:         W,
+    height:        H,
+    background:    0,
+    tiles:         corridor_grid,
+    exits:         corridor_exits,
+    shops:         [],
+    enemies:       [],
+    start_x:       start_x,
+    start_y:       start_y,
+    start_facing:  "south"
+  };
 
-  atlas.maps[0].name         = "Dungeon";
-  atlas.maps[0].music        = "elegy_dm";
-  atlas.maps[0].width        = W;
-  atlas.maps[0].height       = H;
-  atlas.maps[0].background   = 0;
-  atlas.maps[0].tiles        = grid;
-  atlas.maps[0].enemies      = [];
-  atlas.maps[0].start_x      = start.cx;
-  atlas.maps[0].start_y      = start.cy;
-  atlas.maps[0].start_facing = "south";
-
-  // All other map slots alias to the same dungeon so saved-game IDs don't crash.
-  for (var k = 1; k < MAP_COUNT; k++) {
-    atlas.maps[k].name         = atlas.maps[0].name;
-    atlas.maps[k].music        = atlas.maps[0].music;
-    atlas.maps[k].width        = atlas.maps[0].width;
-    atlas.maps[k].height       = atlas.maps[0].height;
-    atlas.maps[k].background   = atlas.maps[0].background;
-    atlas.maps[k].tiles        = atlas.maps[0].tiles;
-    atlas.maps[k].enemies      = atlas.maps[0].enemies;
-    atlas.maps[k].start_x      = atlas.maps[0].start_x;
-    atlas.maps[k].start_y      = atlas.maps[0].start_y;
-    atlas.maps[k].start_facing = atlas.maps[0].start_facing;
+  // Maps 1..N: individual rooms
+  for (var r = 0; r < rooms.length; r++) {
+    var room = rooms[r];
+    atlas.maps[r + 1] = {
+      name:       "Room " + (r + 1),
+      music:      "elegy_dm",
+      width:      room.w + 2,
+      height:     room.h + 2,
+      background: 0,
+      tiles:      room_grids[r],
+      exits:      room_exits_list[r],
+      shops:      [],
+      enemies:    []
+    };
   }
 
 })();
