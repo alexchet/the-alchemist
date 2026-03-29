@@ -3,7 +3,8 @@
  * Shown in the Info screen
  */
 
-var MINIMAP_ICON_SIZE = 3; // pixels
+var MINIMAP_ICON_SIZE = 3; // pixels — source sprite size (do not change)
+var MINIMAP_TILE_PX   = 2; // pixels — rendered size per tile on screen
  
 var MINIMAP_ICON_NONWALKABLE = 0;
 var MINIMAP_ICON_WALKABLE = 1;
@@ -63,9 +64,9 @@ function minimap_render() {
 
   // render map tiles
   for (var i = 0; i < tiles_x; i++) {
-    var draw_x = i * MINIMAP_ICON_SIZE + left_x;
+    var draw_x = i * MINIMAP_TILE_PX + left_x;
     for (var j = 0; j < tiles_y; j++) {
-      var draw_y     = j * MINIMAP_ICON_SIZE + top_y;
+      var draw_y      = j * MINIMAP_TILE_PX + top_y;
       var target_tile = mazemap_get_tile(start_x + i, start_y + j);
       if (tileset.walkable[target_tile]) {
         minimap_render_icon(draw_x, draw_y, MINIMAP_ICON_WALKABLE);
@@ -80,7 +81,7 @@ function minimap_render() {
     var ex = atlas.maps[mazemap.current_id].exits[i].exit_x - start_x;
     var ey = atlas.maps[mazemap.current_id].exits[i].exit_y - start_y;
     if (ex >= 0 && ex < tiles_x && ey >= 0 && ey < tiles_y) {
-      minimap_render_icon(ex * MINIMAP_ICON_SIZE + left_x, ey * MINIMAP_ICON_SIZE + top_y, MINIMAP_ICON_EXIT);
+      minimap_render_icon(ex * MINIMAP_TILE_PX + left_x, ey * MINIMAP_TILE_PX + top_y, MINIMAP_ICON_EXIT);
     }
   }
 
@@ -89,7 +90,7 @@ function minimap_render() {
     var sx = atlas.maps[mazemap.current_id].shops[i].exit_x - start_x;
     var sy = atlas.maps[mazemap.current_id].shops[i].exit_y - start_y;
     if (sx >= 0 && sx < tiles_x && sy >= 0 && sy < tiles_y) {
-      minimap_render_icon(sx * MINIMAP_ICON_SIZE + left_x, sy * MINIMAP_ICON_SIZE + top_y, MINIMAP_ICON_EXIT);
+      minimap_render_icon(sx * MINIMAP_TILE_PX + left_x, sy * MINIMAP_TILE_PX + top_y, MINIMAP_ICON_EXIT);
     }
   }
 
@@ -99,38 +100,37 @@ function minimap_render() {
   else if (avatar.facing == "north") cursor_direction = MINIMAP_CURSOR_NORTH;
   else if (avatar.facing == "east")  cursor_direction = MINIMAP_CURSOR_EAST;
   else                               cursor_direction = MINIMAP_CURSOR_SOUTH;
-  var cur_x = (avatar.x - start_x) * MINIMAP_ICON_SIZE + left_x;
-  var cur_y = (avatar.y - start_y) * MINIMAP_ICON_SIZE + top_y;
+  var cur_x = (avatar.x - start_x) * MINIMAP_TILE_PX + left_x;
+  var cur_y = (avatar.y - start_y) * MINIMAP_TILE_PX + top_y;
   minimap_render_cursor(cur_x, cur_y, cursor_direction);
 
 }
 
 function minimap_render_icon(screen_x, screen_y, icon_type) {
- 
   ctx.drawImage(
     minimap.img,
     icon_type * MINIMAP_ICON_SIZE * PRESCALE,
-	0,
-	MINIMAP_ICON_SIZE * PRESCALE,
-	MINIMAP_ICON_SIZE * PRESCALE,
+    0,
+    MINIMAP_ICON_SIZE * PRESCALE,
+    MINIMAP_ICON_SIZE * PRESCALE,
     screen_x * SCALE,
     screen_y * SCALE,
-    MINIMAP_ICON_SIZE * SCALE,
-    MINIMAP_ICON_SIZE * SCALE
+    MINIMAP_TILE_PX * SCALE,
+    MINIMAP_TILE_PX * SCALE
   );
 }
 
 function minimap_render_cursor(screen_x, screen_y, cursor_dir) {
- ctx.drawImage(
+  ctx.drawImage(
     minimap.cursor,
     cursor_dir * MINIMAP_ICON_SIZE * PRESCALE,
-	0,
-	MINIMAP_ICON_SIZE * PRESCALE,
+    0,
+    MINIMAP_ICON_SIZE * PRESCALE,
     MINIMAP_ICON_SIZE * PRESCALE,
     screen_x * SCALE,
     screen_y * SCALE,
-    MINIMAP_ICON_SIZE * SCALE,
-    MINIMAP_ICON_SIZE * SCALE
+    MINIMAP_TILE_PX * SCALE,
+    MINIMAP_TILE_PX * SCALE
   );
 }
 

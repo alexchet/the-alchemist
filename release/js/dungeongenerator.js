@@ -18,7 +18,6 @@
  *   1  = dungeon_floor    (walkable)  -- maze corridors
  *   2  = dungeon_wall     (blocked)   -- standard wall
  *   3  = dungeon_door     (walkable)  -- region junction
- *   4  = pillar_exterior  (blocked)   -- convex wall corner column
  *   5  = dungeon_ceiling  (walkable)  -- roofed room interior
  */
 
@@ -43,7 +42,7 @@ for (var i = 0; i < MAP_COUNT; i++) {
   var FLOOR  = 1;   // maze corridors
   var CEIL   = 5;   // roofed room interior
   var DOOR   = 3;   // region junction
-  var CORNER = 4;   // convex wall corner column
+  // var CORNER = 4;   // convex wall corner column (unused)
 
   var NUM_ROOM_TRIES         = 150;
   var ROOM_EXTRA_SIZE        = 0;   // increase for larger rooms
@@ -185,12 +184,7 @@ for (var i = 0; i < MAP_COUNT; i++) {
   // -------------------------------------------------------- connect regions --
 
   function add_junction(x, y) {
-    // 75% closed door, 25% open (floor or open door).
-    if (Math.random() < 0.25) {
-      set_tile(x, y, Math.random() < 0.33 ? FLOOR : DOOR);
-    } else {
-      set_tile(x, y, DOOR);
-    }
+    set_tile(x, y, FLOOR);
   }
 
   function connect_regions() {
@@ -284,15 +278,26 @@ for (var i = 0; i < MAP_COUNT; i++) {
     }
   }
 
-  // -------------------------------------------------------- corner columns --
+  // ----------------------------------------------------------- place doors --
+  // Run after dead ends are removed. A FLOOR tile becomes a DOOR when it sits
+  // at the mouth of a 1-tile-wide corridor leading into a room (CEIL):
+  //   - one cardinal neighbour is CEIL, AND
+  //   - both sides of the perpendicular axis are WALL.
+  // This guarantees exactly one door per corridor-to-room entry.
 
-  function add_corners() {
+  function add_doors() {
+    // A FLOOR tile becomes a DOOR only when it is the mouth of a 1-tile-wide
+    // corridor approaching a room from the south (room to the north, tn===CEIL)
+    // or from the east (room to the west, tw===CEIL).
+    // Using one canonical direction per axis guarantees exactly one door per
+    // corridor-to-room connection regardless of corridor length.
     for (var y = 1; y < H - 1; y++) {
       for (var x = 1; x < W - 1; x++) {
-        if (get_tile(x, y) !== WALL) continue;
-        var ns = get_tile(x, y - 1) !== WALL || get_tile(x, y + 1) !== WALL;
-        var ew = get_tile(x + 1, y) !== WALL || get_tile(x - 1, y) !== WALL;
-        if (ns && ew) set_tile(x, y, CORNER);
+        if (get_tile(x, y) !== FLOOR) continue;
+        var tn = get_tile(x, y - 1), ts = get_tile(x, y + 1);
+        var te = get_tile(x + 1, y), tw = get_tile(x - 1, y);
+        if (tn === CEIL && te === WALL && tw === WALL) { set_tile(x, y, DOOR); continue; }
+        if (tw === CEIL && tn === WALL && ts === WALL) { set_tile(x, y, DOOR); }
       }
     }
   }
@@ -311,7 +316,7 @@ for (var i = 0; i < MAP_COUNT; i++) {
 
   connect_regions();
   remove_dead_ends();
-  add_corners();
+  add_doors();
 
   // ================================================= store atlas data ==
 
