@@ -45,7 +45,8 @@ function avatar_reset() {
   avatar.y      = (start.start_y      !== undefined) ? start.start_y      : 1;
   avatar.facing = (start.start_facing !== undefined) ? start.start_facing : "south";
   avatar.moved = false;
-  avatar.map_id = 0;
+  avatar.map_id = (start.start_map !== undefined) ? start.start_map : 0;
+  if (avatar.map_id !== 0) { mazemap_set(avatar.map_id); }
   avatar.weapon = 0;
   avatar.armor = 1;
   avatar.hp = 25;

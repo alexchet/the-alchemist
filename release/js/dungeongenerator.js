@@ -29,16 +29,18 @@ atlas.maps = new Array();
 
 (function() {
   // Stage dimensions must be odd for the maze algorithm to align correctly.
-  var W = 41, H = 41;
+  var W = 81, H = 81;
 
   var WALL  = 2;
   var FLOOR = 1;
   var CEIL  = 5;
   var DOOR  = 3;
 
-  var NUM_ROOM_TRIES         = 150;
-  var ROOM_EXTRA_SIZE        = 0;   // increase for larger rooms
-  var WINDING_PERCENT        = 0;   // 0 = straight corridors, 100 = very windy
+  var NUM_ROOM_TRIES         = 600;
+  var ROOM_MIN_SIZE          = 2;   // minimum room half-size: result = ROOM_MIN_SIZE*2+1 (e.g. 2 → 5x5)
+  var ROOM_EXTRA_SIZE        = 2;   // random extra half-size added on top of minimum
+  var MIN_ROOM_GAP           = 2;   // minimum corridor tiles between any two rooms
+  var WINDING_PERCENT        = 50;   // 0 = straight corridors, 100 = very windy
   var EXTRA_CONNECTOR_CHANCE = 20;  // 1-in-N chance of a redundant connector (loops)
 
   // Cardinal directions as [dx, dy].
@@ -90,7 +92,8 @@ atlas.maps = new Array();
   function add_rooms() {
     for (var i = 0; i < NUM_ROOM_TRIES; i++) {
       // Odd room dimensions so they line up with the maze grid.
-      var size = (Math.floor(Math.random() * (2 + ROOM_EXTRA_SIZE)) + 1) * 2 + 1;
+      // Base size starts at ROOM_MIN_SIZE so smallest room is ROOM_MIN_SIZE*2+1.
+      var size = (Math.floor(Math.random() * (1 + ROOM_EXTRA_SIZE)) + ROOM_MIN_SIZE) * 2 + 1;
       var rectangularity = Math.floor(Math.random() * (1 + Math.floor(size / 2))) * 2;
       var w = size, h = size;
       if (Math.random() < 0.5) w += rectangularity;
@@ -100,12 +103,14 @@ atlas.maps = new Array();
       var x = Math.floor(Math.random() * Math.floor((W - w) / 2)) * 2 + 1;
       var y = Math.floor(Math.random() * Math.floor((H - h) / 2)) * 2 + 1;
 
-      // Reject if the new room touches or overlaps any existing room.
+      // Reject if the new room is closer than MIN_ROOM_GAP tiles to any existing room.
+      // Expanding each existing room by MIN_ROOM_GAP before the overlap test
+      // guarantees at least that many corridor tiles between room walls.
       var overlaps = false;
       for (var r = 0; r < rooms.length; r++) {
         var rm = rooms[r];
-        var dx = Math.max(0, Math.max(rm.x - (x + w), x - (rm.x + rm.w)));
-        var dy = Math.max(0, Math.max(rm.y - (y + h), y - (rm.y + rm.h)));
+        var dx = Math.max(0, Math.max((rm.x - MIN_ROOM_GAP) - (x + w), x - (rm.x + rm.w + MIN_ROOM_GAP)));
+        var dy = Math.max(0, Math.max((rm.y - MIN_ROOM_GAP) - (y + h), y - (rm.y + rm.h + MIN_ROOM_GAP)));
         if (dx <= 0 && dy <= 0) { overlaps = true; break; }
       }
       if (overlaps) continue;
@@ -270,33 +275,83 @@ atlas.maps = new Array();
     }
   }
 
+  // ----------------------------------------- limit room side connections --
+  // Called after connect_regions() but before remove_dead_ends().
+  // For each side of each room that has multiple corridor junctions, walls
+  // off all but one (chosen at random). remove_dead_ends() then naturally
+  // prunes any corridor stubs that were only attached to the walled-off tiles.
+  // This guarantees at most one door per side per room without any random
+  // picking needed later in find_connections.
+
+  function limit_room_side_connections() {
+    for (var r = 0; r < rooms.length; r++) {
+      var room = rooms[r];
+      var candidates, pick, i;
+
+      // North face: floor tiles at y = room.y - 1
+      candidates = [];
+      for (var x = room.x; x < room.x + room.w; x++) {
+        if (get_tile(x, room.y - 1) === FLOOR) candidates.push(x);
+      }
+      if (candidates.length > 1) {
+        pick = candidates[Math.floor(Math.random() * candidates.length)];
+        for (i = 0; i < candidates.length; i++)
+          if (candidates[i] !== pick) set_tile(candidates[i], room.y - 1, WALL);
+      }
+
+      // South face: floor tiles at y = room.y + room.h
+      candidates = [];
+      for (var x = room.x; x < room.x + room.w; x++) {
+        if (get_tile(x, room.y + room.h) === FLOOR) candidates.push(x);
+      }
+      if (candidates.length > 1) {
+        pick = candidates[Math.floor(Math.random() * candidates.length)];
+        for (i = 0; i < candidates.length; i++)
+          if (candidates[i] !== pick) set_tile(candidates[i], room.y + room.h, WALL);
+      }
+
+      // West face: floor tiles at x = room.x - 1
+      candidates = [];
+      for (var y = room.y; y < room.y + room.h; y++) {
+        if (get_tile(room.x - 1, y) === FLOOR) candidates.push(y);
+      }
+      if (candidates.length > 1) {
+        pick = candidates[Math.floor(Math.random() * candidates.length)];
+        for (i = 0; i < candidates.length; i++)
+          if (candidates[i] !== pick) set_tile(room.x - 1, candidates[i], WALL);
+      }
+
+      // East face: floor tiles at x = room.x + room.w
+      candidates = [];
+      for (var y = room.y; y < room.y + room.h; y++) {
+        if (get_tile(room.x + room.w, y) === FLOOR) candidates.push(y);
+      }
+      if (candidates.length > 1) {
+        pick = candidates[Math.floor(Math.random() * candidates.length)];
+        for (i = 0; i < candidates.length; i++)
+          if (candidates[i] !== pick) set_tile(room.x + room.w, candidates[i], WALL);
+      }
+    }
+  }
+
   // ---------------------------------------------------- find connections ---
-  // Scans each room's perimeter for FLOOR tiles in the full grid.
-  // Each such tile is a corridor-to-room junction point.
-  // approach = which side of the room the corridor is on.
+  // Scans each room's perimeter for FLOOR tiles. Because limit_room_side_connections
+  // already ran, there is at most one per side — no picking needed here.
 
   function find_connections() {
     var connections = [];
     for (var r = 0; r < rooms.length; r++) {
       var room = rooms[r];
 
-      // North side: corridor above the room (low y in grid = north on screen)
       for (var x = room.x; x < room.x + room.w; x++) {
         if (get_tile(x, room.y - 1) === FLOOR)
           connections.push({ cx: x, cy: room.y - 1, room_idx: r, approach: "north" });
-      }
-      // South side: corridor below the room
-      for (var x = room.x; x < room.x + room.w; x++) {
         if (get_tile(x, room.y + room.h) === FLOOR)
           connections.push({ cx: x, cy: room.y + room.h, room_idx: r, approach: "south" });
       }
-      // West side: corridor left of the room
       for (var y = room.y; y < room.y + room.h; y++) {
         if (get_tile(room.x - 1, y) === FLOOR)
           connections.push({ cx: room.x - 1, cy: y, room_idx: r, approach: "west" });
-      }
-      // East side: corridor right of the room
-      for (var y = room.y; y < room.y + room.h; y++) {
         if (get_tile(room.x + room.w, y) === FLOOR)
           connections.push({ cx: room.x + room.w, cy: y, room_idx: r, approach: "east" });
       }
@@ -317,9 +372,21 @@ atlas.maps = new Array();
   }
 
   connect_regions();
+  limit_room_side_connections();
   remove_dead_ends();
 
   var connections = find_connections();
+
+  // -------------------------------------------------- build minimap grid --
+  // A merged copy of the full dungeon — corridors AND room interiors together.
+  // Used exclusively by the minimap so it always shows the complete layout
+  // regardless of which map (corridor or room) the player is currently in.
+  // Doors will be stamped onto this grid during exit wiring below.
+
+  var minimap_grid = [];
+  for (var y = 0; y < H; y++) {
+    minimap_grid[y] = grid[y].slice();
+  }
 
   // -------------------------------------------------- build corridor grid --
   // Room interiors (CEIL) become solid wall. Connection tiles stay FLOOR for
@@ -329,7 +396,10 @@ atlas.maps = new Array();
   for (var y = 0; y < H; y++) {
     corridor_grid[y] = [];
     for (var x = 0; x < W; x++) {
-      corridor_grid[y][x] = (grid[y][x] === CEIL) ? WALL : grid[y][x];
+      var t = grid[y][x];
+      // Room interiors (CEIL) become solid wall in the corridor view.
+      // Corridor floors (FLOOR) become CEIL so the 3D renderer shows a ceiling.
+      corridor_grid[y][x] = (t === CEIL) ? WALL : (t === FLOOR ? CEIL : t);
     }
   }
 
@@ -359,13 +429,11 @@ atlas.maps = new Array();
   //
   // For each connection (corridor tile adjacent to a room):
   //
-  //   Corridor exit: stepping on the junction tile (cx, cy) teleports the
-  //   player into the room map at spawn_x/spawn_y (one step inside the room
-  //   from the entry wall so they don't immediately re-exit).
+  //   Corridor exit: stepping on the door in the wall teleports the player
+  //   into the room map at spawn_x/spawn_y (first interior CEIL tile).
   //
-  //   Room exit: stepping on exit_x/exit_y (the interior tile against the
-  //   entry wall) teleports the player back to the corridor at ret_x/ret_y
-  //   (one step away from the junction, deeper into the corridor).
+  //   Room exit: stepping on the border door teleports the player back to
+  //   the corridor at (cx, cy) — the FLOOR tile just outside the door.
   //
   // Local room coords use a 1-tile wall border offset:
   //   local_x = global_x - room.x + 1
@@ -428,6 +496,9 @@ atlas.maps = new Array();
     // Door goes into the corridor wall face — replaces WALL with DOOR.
     corridor_grid[wall_dy][wall_dx] = DOOR;
 
+    // Same door position applied to the minimap grid (was CEIL there).
+    minimap_grid[wall_dy][wall_dx] = DOOR;
+
     // Door goes into the room border wall — replaces the border WALL with DOOR.
     room_grids[r][exit_y][exit_x] = DOOR;
 
@@ -449,7 +520,27 @@ atlas.maps = new Array();
   // Fallback start if no connections were found (degenerate generation).
   if (start_x === -1) { start_x = 1; start_y = 1; }
 
+  // Find topmost-leftmost room (min y, then min x as tiebreaker).
+  var spawn_room_idx = 0;
+  for (var r = 1; r < rooms.length; r++) {
+    if (rooms[r].y < rooms[spawn_room_idx].y ||
+        (rooms[r].y === rooms[spawn_room_idx].y && rooms[r].x < rooms[spawn_room_idx].x)) {
+      spawn_room_idx = r;
+    }
+  }
+  var spawn_room = rooms[spawn_room_idx];
+  // Room-local center: room grid is (w+2) x (h+2); interior starts at (1,1).
+  var spawn_lx = Math.floor((spawn_room.w + 2) / 2);
+  var spawn_ly = Math.floor((spawn_room.h + 2) / 2);
+
   // ================================================= store atlas data ==
+
+  // Full dungeon grid and room list — used by the minimap to show the
+  // complete layout and to convert room-local coords to global coords.
+  atlas.minimap_grid   = minimap_grid;
+  atlas.minimap_width  = W;
+  atlas.minimap_height = H;
+  atlas.rooms          = rooms;
 
   // Map 0: the corridor/maze
   atlas.maps[0] = {
@@ -462,8 +553,9 @@ atlas.maps = new Array();
     exits:         corridor_exits,
     shops:         [],
     enemies:       [],
-    start_x:       start_x,
-    start_y:       start_y,
+    start_map:     spawn_room_idx + 1,
+    start_x:       spawn_lx,
+    start_y:       spawn_ly,
     start_facing:  "south"
   };
 
