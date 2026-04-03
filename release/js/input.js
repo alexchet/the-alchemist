@@ -16,6 +16,7 @@ pressing.left = false;
 pressing.right = false;
 pressing.action = false;
 pressing.mouse = false;
+pressing.tab = false;
 
 var input_lock = new Object();
 input_lock.up = false;
@@ -24,6 +25,7 @@ input_lock.left = false;
 input_lock.right = false;
 input_lock.action = false;
 input_lock.mouse = false;
+input_lock.tab = false;
 
 var mouse_pos = {x:0, y:0};
 
@@ -34,6 +36,7 @@ var KEYCODE_DOWN   = 40; // arrow down
 var KEYCODE_LEFT   = 37; // arrow left
 var KEYCODE_RIGHT  = 39; // arrow right
 var KEYCODE_ACTION = 32; // space
+var KEYCODE_TAB    = 9;  // tab — auto-explore toggle
 
 // secondary
 var ALTCODE_UP     = 87; // w
@@ -63,7 +66,10 @@ function handleKeyDown(evt) {
   else if (evt.keyCode == KEYCODE_ACTION || evt.keyCode == ALTCODE_ACTION) {
     pressing.action = true;
   }
-  
+  else if (evt.keyCode == KEYCODE_TAB) {
+    pressing.tab = true;
+  }
+
 }
 
 function handleKeyUp(evt) {
@@ -86,7 +92,11 @@ function handleKeyUp(evt) {
   }
   else if (evt.keyCode == KEYCODE_ACTION || evt.keyCode == ALTCODE_ACTION) {
     pressing.action = false;
-	input_lock.action = false;  
+	input_lock.action = false;
+  }
+  else if (evt.keyCode == KEYCODE_TAB) {
+    pressing.tab = false;
+    input_lock.tab = false;
   }
 
 }

@@ -27,6 +27,11 @@ mapscript.locked_doors = [
 
 function mapscript_exec(map_id) {
 
+  if (atlas.procedural) {
+    if (map_id === atlas.start_room_map_id) return mapscript_haybale(2, 2);
+    return false;
+  }
+
   var result = false;
   switch (map_id) {
 

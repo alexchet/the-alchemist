@@ -26,10 +26,11 @@
 
 var atlas = new Object();
 atlas.maps = new Array();
+atlas.procedural = true;
 
 (function() {
   // Stage dimensions must be odd for the maze algorithm to align correctly.
-  var W = 81, H = 81;
+  var W = 41, H = 41;
 
   var WALL  = 2;
   var FLOOR = 1;
@@ -361,6 +362,17 @@ atlas.maps = new Array();
 
   // --------------------------------------------------------------- run it --
 
+  // Force-place a 3x3 start room at the top-left corner before random rooms.
+  // Odd coords (1,1) are the minimum valid position on the grid.
+  // This room is always rooms[0] and will always win the topmost-leftmost
+  // spawn-room selection (y=1, x=1 — nothing can be placed closer to origin).
+  var forced_start = {x: 1, y: 1, w: 3, h: 3, cx: 2, cy: 2};
+  rooms.push(forced_start);
+  start_region();
+  for (var fry = forced_start.y; fry < forced_start.y + forced_start.h; fry++)
+    for (var frx = forced_start.x; frx < forced_start.x + forced_start.w; frx++)
+      carve(frx, fry, CEIL);
+
   add_rooms();
 
   // Grow mazes in every odd-coordinate wall cell not already inside a room.
@@ -424,6 +436,10 @@ atlas.maps = new Array();
     room_grids.push(rg);
     room_exits_list.push([]);
   }
+
+  // Place hay pile at center of the start room (rooms[0], always 3x3).
+  // Room grid is 5x5 (w+2 x h+2); interior center is (2,2).
+  room_grids[0][2][2] = 17;
 
   // ------------------------------------------------------ wire up exits --
   //
@@ -532,6 +548,8 @@ atlas.maps = new Array();
   // Room-local center: room grid is (w+2) x (h+2); interior starts at (1,1).
   var spawn_lx = Math.floor((spawn_room.w + 2) / 2);
   var spawn_ly = Math.floor((spawn_room.h + 2) / 2);
+
+  atlas.start_room_map_id = spawn_room_idx + 1;
 
   // ================================================= store atlas data ==
 
