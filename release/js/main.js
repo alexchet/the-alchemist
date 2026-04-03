@@ -75,6 +75,7 @@ function init() {
   avatar_init();
   action_init();
   enemy_init();
+  we_init();
   combat_init();
   dialog_init();
   boss_init();

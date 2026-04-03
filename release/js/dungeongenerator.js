@@ -593,4 +593,32 @@ atlas.procedural = true;
     };
   }
 
+  // Place enemies in rooms (skip rooms[0] = safe start room).
+  // Interior positions are local x: 1..room.w, y: 1..room.h.
+  var ENEMY_POOL = [
+    ENEMY_SHADOW_TENDRILS, ENEMY_IMP, ENEMY_SHADOW_SOUL,
+    ENEMY_ZOMBIE, ENEMY_SKELETON, ENEMY_DRUID
+  ];
+  for (var r = 1; r < rooms.length; r++) {
+    var room    = rooms[r];
+    var map_id  = r + 1;
+    var area    = room.w * room.h;
+    var count   = area > 15 ? 2 : 1;
+    var placements = [];
+    var attempts   = 0;
+    while (placements.length < count && attempts < 50) {
+      attempts++;
+      var lx = 1 + Math.floor(Math.random() * room.w);
+      var ly = 1 + Math.floor(Math.random() * room.h);
+      var occupied = false;
+      for (var p = 0; p < placements.length; p++) {
+        if (placements[p].x === lx && placements[p].y === ly) { occupied = true; break; }
+      }
+      if (occupied) continue;
+      var type = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
+      placements.push({ x: lx, y: ly, type: type });
+    }
+    atlas.maps[map_id].enemy_placement = placements;
+  }
+
 })();

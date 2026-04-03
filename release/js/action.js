@@ -282,9 +282,11 @@ function action_render() {
 
   if (!action.button_img_loaded) return;
 
-  // if in combat, show fight and run
-  if (gamestate == STATE_COMBAT) {
+  // show attack in explore and combat states; run only in combat
+  if (gamestate == STATE_EXPLORE || gamestate == STATE_COMBAT) {
     action_render_button(0, BUTTON_POS_ATTACK);
+  }
+  if (gamestate == STATE_COMBAT) {
     action_render_button(1, BUTTON_POS_RUN);
   }
 

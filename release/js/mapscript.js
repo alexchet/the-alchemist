@@ -118,6 +118,7 @@ function mapscript_haybale(x, y) {
   if (avatar.x == x && avatar.y == y) { 
     explore.message = "You rest for awhile.";
     avatar_sleep();
+    we_respawn_all();
 	sounds_play(SFX_COIN);
     return true;
   }

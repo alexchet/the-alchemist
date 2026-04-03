@@ -133,8 +133,13 @@ function avatar_explore() {
 }
 
 function avatar_move(dx,dy) {
-  var target_tile = mazemap_get_tile(avatar.x+dx,avatar.y+dy);
+  var tx = avatar.x + dx, ty = avatar.y + dy;
+  var target_tile = mazemap_get_tile(tx, ty);
   if (tileset.walkable[target_tile]) {
+    if (typeof we_tile_occupied === 'function' && we_tile_occupied(avatar.map_id, tx, ty)) {
+      sounds_play(SFX_BLOCKED);
+      return;
+    }
     avatar.x += dx;
     avatar.y += dy;
     redraw = true;
@@ -142,7 +147,7 @@ function avatar_move(dx,dy) {
     avatar_save();
   }
   else {
-    sounds_play(SFX_BLOCKED);  
+    sounds_play(SFX_BLOCKED);
   }
 }
 

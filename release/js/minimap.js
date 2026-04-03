@@ -250,6 +250,9 @@ function minimap_render() {
     }
   }
 
+  // render enemies
+  we_render_minimap(start_x, start_y, tiles_x, tiles_y);
+
   // render avatar cursor
   var cursor_direction;
   if      (avatar.facing == "west")  cursor_direction = MINIMAP_CURSOR_WEST;
