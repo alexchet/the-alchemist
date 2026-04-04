@@ -2,15 +2,15 @@
  Conversation and shop handling
  */
 
-var DIALOG_BUTTON_NONE = 0;
-var DIALOG_BUTTON_BUY = 1;
-var DIALOG_BUTTON_EXIT = 2;
+const DIALOG_BUTTON_NONE = 0;
+const DIALOG_BUTTON_BUY  = 1;
+const DIALOG_BUTTON_EXIT = 2;
 
-var BUTTON_POS_OPT0 = {x:0, y:60, w:20, h:20};
-var BUTTON_POS_OPT1 = {x:0, y:80, w:20, h:20};
-var BUTTON_POS_OPT2 = {x:0, y:100, w:20, h:20};
+const BUTTON_POS_OPT0 = {x:0, y:60,  w:20, h:20};
+const BUTTON_POS_OPT1 = {x:0, y:80,  w:20, h:20};
+const BUTTON_POS_OPT2 = {x:0, y:100, w:20, h:20};
 
-var dialog = new Object();
+const dialog = {};
 
 dialog.select_pos = BUTTON_POS_OPT2;
 dialog.button_img = new Image();

@@ -3,24 +3,23 @@
  * Shown in the Info screen
  */
 
-var MINIMAP_ICON_SIZE = 3; // pixels — source sprite size (do not change)
-var MINIMAP_TILE_PX   = 1; // pixels — rendered size per tile on screen
- 
-var MINIMAP_ICON_NONWALKABLE = 0;
-var MINIMAP_ICON_WALKABLE = 1;
-// var MINIMAP_ICON_HEROINE = 2;
-var MINIMAP_ICON_EXIT = 3;
+const MINIMAP_ICON_SIZE = 3; // pixels — source sprite size (do not change)
+const MINIMAP_TILE_PX   = 1; // pixels — rendered size per tile on screen
+const MINIMAP_VIEW      = 40; // viewport size in tiles
 
-var MINIMAP_MARGIN_LEFT = 2;
-var MINIMAP_MARGIN_TOP = 2;
+const MINIMAP_ICON_NONWALKABLE = 0;
+const MINIMAP_ICON_WALKABLE    = 1;
+const MINIMAP_ICON_EXIT        = 3;
 
-var MINIMAP_CURSOR_WEST = 0;
-var MINIMAP_CURSOR_NORTH = 1;
-var MINIMAP_CURSOR_EAST = 2;
-var MINIMAP_CURSOR_SOUTH = 3;
+const MINIMAP_MARGIN_LEFT = 2;
+const MINIMAP_MARGIN_TOP  = 2;
 
+const MINIMAP_CURSOR_WEST  = 0;
+const MINIMAP_CURSOR_NORTH = 1;
+const MINIMAP_CURSOR_EAST  = 2;
+const MINIMAP_CURSOR_SOUTH = 3;
 
-var minimap = new Object();
+const minimap = {};
 
 minimap.img = new Image();
 minimap.img_loaded = false;
@@ -32,8 +31,7 @@ minimap.cursor_loaded = false;
 // Tiles are marked true when they fall inside the player's visibility cone.
 // Initialized lazily on first update so atlas dimensions are guaranteed ready.
 
-var fog = new Object();
-fog.discovered = null;
+const fog = { discovered: null };
 
 function fog_ensure_init() {
   if (fog.discovered || !atlas.minimap_grid) return;
@@ -162,8 +160,6 @@ function minimap_cursor_onload() {
   minimap.cursor_loaded = true;
 }
 
-
-var MINIMAP_VIEW = 40; // viewport size in tiles
 
 // Returns the player's position in global dungeon coordinates.
 // When in the corridor (map 0) this is just avatar.x/y.

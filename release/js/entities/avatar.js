@@ -2,9 +2,8 @@
  Maze Avatar
  **/
  
-var avatar = new Object();
-avatar.campaign = new Array();
-var avatar_continue = false;
+let avatar = { campaign: [] }; // let — replaced wholesale by JSON.parse on save-game load
+let avatar_continue = false;
 
 //---- Public Functions ---------------------------------------------
 function avatar_init() {
@@ -136,7 +135,7 @@ function avatar_move(dx,dy) {
   var tx = avatar.x + dx, ty = avatar.y + dy;
   var target_tile = mazemap_get_tile(tx, ty);
   if (tileset.walkable[target_tile]) {
-    if (typeof we_tile_occupied === 'function' && we_tile_occupied(avatar.map_id, tx, ty)) {
+    if (we_tile_occupied(avatar.map_id, tx, ty)) {
       sounds_play(SFX_BLOCKED);
       return;
     }

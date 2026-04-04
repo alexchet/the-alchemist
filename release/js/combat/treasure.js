@@ -3,11 +3,11 @@
  Handles display and rewards for loot
  */
 
-var TREASURE_ICON_SIZE = 32;
-var TREASURE_POS_X = 64;
-var TREASURE_POS_Y = 88;
+const TREASURE_ICON_SIZE = 32;
+const TREASURE_POS_X     = 64;
+const TREASURE_POS_Y     = 88;
 
-var treasure = new Object();
+const treasure = {};
 
 treasure.img = new Image();
 treasure.img_loaded = false;

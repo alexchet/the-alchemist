@@ -2,31 +2,25 @@
  Exploration game state
  */
 
-var explore = new Object();
-explore.message = "";
+const AUTO_STEP_DELAY = 7; // frames between steps (~8.5 steps/sec at 60 FPS)
 
-// found items for rendering
-explore.treasure_id = 0;
-explore.gold_value  = 0;
-
-// auto-explore
-explore.auto       = false;
-explore.auto_timer = 0;
-explore.auto_steps = 0;
-var AUTO_STEP_DELAY = 7;  // frames between steps (~8.5 steps/sec at 60 FPS)
-
-// in-world combat messages
-explore.combat_action = "";
-explore.combat_result = "";
-explore.enemy_name    = "";
-explore.enemy_action  = "";
-explore.enemy_result  = "";
-explore.kill_message  = "";
-explore.kill_timer    = 0;
-explore.msg_timer     = 0;
-
-// defeat
-explore.defeated = false;
+const explore = {
+  message:        "",
+  treasure_id:    0,
+  gold_value:     0,
+  auto:           false,
+  auto_timer:     0,
+  auto_steps:     0,
+  combat_action:  "",
+  combat_result:  "",
+  enemy_name:     "",
+  enemy_action:   "",
+  enemy_result:   "",
+  kill_message:   "",
+  kill_timer:     0,
+  msg_timer:      0,
+  defeated:       false,
+};
 
 // ---------------------------------------------------------------- auto-explore --
 

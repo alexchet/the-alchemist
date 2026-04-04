@@ -2,7 +2,7 @@
  * Boss encounter logic and special art
  */
  
-var boss = new Object();
+const boss = {};
 
 boss.boneshield_img = new Image();
 boss.boneshield_loaded = false;

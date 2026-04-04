@@ -3,7 +3,7 @@
  */
 
 
-var mapscript = new Object();
+const mapscript = {};
 
 mapscript.bone_piles = new Array();
 mapscript.bone_piles = [

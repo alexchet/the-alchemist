@@ -8,18 +8,15 @@
   
  */
 
-var loadbar = new Object();
-
-// change configuration here
-loadbar.width = 100;
-loadbar.height = 10;
-loadbar.background_color = '#333333';
-loadbar.foreground_color = '#cccccc';
-
-// default centered
-// VIEW_WIDTH and VIEW_HEIGHT must already be defined (config.js)
-loadbar.x = VIEW_WIDTH/2 - loadbar.width/2;
-loadbar.y = VIEW_HEIGHT/2 - loadbar.height/2;
+const loadbar = {
+  width:            100,
+  height:           10,
+  background_color: '#333333',
+  foreground_color: '#cccccc',
+  // VIEW_WIDTH and VIEW_HEIGHT must already be defined (config.js)
+  x: VIEW_WIDTH/2  - 50,
+  y: VIEW_HEIGHT/2 - 5,
+};
 
 function loadbar_render(percentage) {
   loadbar_render_bar(100, loadbar.background_color);

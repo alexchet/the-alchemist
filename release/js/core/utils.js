@@ -1,8 +1,8 @@
 // click areas reusable by several modules
-var clickarea_up = {x:40, y:0, w:80, h:100};
-var clickarea_down = {x:40, y:100, w:80, h:20};
-var clickarea_left = {x:0, y:20, w:40, h:100};
-var clickarea_right = {x:120, y:20, w:40, h:100};
+const clickarea_up    = {x:40,  y:0,   w:80, h:100};
+const clickarea_down  = {x:40,  y:100, w:80, h:20};
+const clickarea_left  = {x:0,   y:20,  w:40, h:100};
+const clickarea_right = {x:120, y:20,  w:40, h:100};
 
 /**
  * Given a point with x,y and a rect with x,y,w,h

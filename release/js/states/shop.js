@@ -2,15 +2,15 @@
  Dialog info for game shops
  */
 
-var SHOP_COUNT = 9;
+const SHOP_COUNT = 9;
 
-var SHOP_WEAPON = 0;
-var SHOP_ARMOR = 1;
-var SHOP_SPELL = 2;
-var SHOP_ROOM = 3;
-var SHOP_MESSAGE = 4;
+const SHOP_WEAPON  = 0;
+const SHOP_ARMOR   = 1;
+const SHOP_SPELL   = 2;
+const SHOP_ROOM    = 3;
+const SHOP_MESSAGE = 4;
 
-var shop = new Array();
+const shop = [];
 for (var i=0; i<SHOP_COUNT; i++) {
   shop[i] = new Object();
   shop[i].item = new Array();

@@ -2,10 +2,10 @@
  * Resolve power use
  */
 
-var ENEMY_POWER_ATTACK = 0;
-var ENEMY_POWER_SCORCH = 1;
-var ENEMY_POWER_HPDRAIN = 2;
-var ENEMY_POWER_MPDRAIN = 3;
+const ENEMY_POWER_ATTACK  = 0;
+const ENEMY_POWER_SCORCH  = 1;
+const ENEMY_POWER_HPDRAIN = 2;
+const ENEMY_POWER_MPDRAIN = 3;
 
 function power_hero_attack() {
 

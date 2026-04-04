@@ -10,14 +10,14 @@ Note this class is simplified in several ways:
 
  */
 
-var JUSTIFY_LEFT = 0;
-var JUSTIFY_RIGHT = 1;
-var JUSTIFY_CENTER = 2;
+const JUSTIFY_LEFT   = 0;
+const JUSTIFY_RIGHT  = 1;
+const JUSTIFY_CENTER = 2;
 
-var FONT_WHITE = 0;
-var FONT_RED = 1;
+const FONT_WHITE = 0;
+const FONT_RED   = 1;
 
-var bitfont = new Object();
+const bitfont = {};
 
 bitfont.img = new Image();
 bitfont.imgred = new Image();

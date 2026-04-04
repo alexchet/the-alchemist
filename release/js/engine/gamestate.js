@@ -3,13 +3,13 @@
  
  */
  
-var STATE_EXPLORE = 0;
-var STATE_COMBAT = 1;
-var STATE_INFO = 2;
-var STATE_DIALOG = 3;
-var STATE_TITLE = 4; 
- 
-var gamestate = STATE_TITLE;
+const STATE_EXPLORE = 0;
+const STATE_COMBAT  = 1;
+const STATE_INFO    = 2;
+const STATE_DIALOG  = 3;
+const STATE_TITLE   = 4;
+
+let gamestate = STATE_TITLE;
 
 function gamestate_logic() {
 

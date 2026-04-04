@@ -8,9 +8,13 @@ While Atlas is a static collection, MazeMap can be altered by events.
 2013 Clint Bellanger
 */
 
-var mazemap = new Object();
-mazemap.current_id = 0;
-mazemap.current_song = "";
+const mazemap = { current_id: 0, current_song: "" };
+
+// Codec support is constant for the session — detect once.
+const CAN_PLAY_MP3 = (function() {
+  var a = document.createElement('audio');
+  return !!a.canPlayType('audio/mpeg;');
+})();
 
 //---- Public Functions ---------------------------------------------
 
@@ -168,6 +172,8 @@ function mazemap_set(map_id) {
  * Background music handling
  */
 function mazemap_set_music(song_filename) {
+  if (!song_filename) return;
+
   var audio_node = document.getElementById("bgmusic");
 
   if (OPTIONS.music == false) {
@@ -191,7 +197,7 @@ function mazemap_set_music(song_filename) {
 
   // do we need to play ogg or mp3?
   var newsource = document.createElement('source');
-  if (audio_node.canPlayType('audio/mpeg;')) {
+  if (CAN_PLAY_MP3) {
     newsource.type = "audio/mpeg";
     newsource.src = song_path + ".mp3";
   } else {

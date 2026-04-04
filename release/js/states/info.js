@@ -4,16 +4,14 @@
  */
 
 // consts
-var AVATAR_SPRITE_W = 80;
-var AVATAR_SPRITE_H = 100;
-var AVATAR_DRAW_X = 40;
-var AVATAR_DRAW_Y = 20;
-var TYPE_ARMOR = 0;
-var TYPE_WEAPON = 1;
+const AVATAR_SPRITE_W = 80;
+const AVATAR_SPRITE_H = 100;
+const AVATAR_DRAW_X   = 40;
+const AVATAR_DRAW_Y   = 20;
+const TYPE_ARMOR      = 0;
+const TYPE_WEAPON     = 1;
 
-
-// class info
-var info = new Object();
+const info = {};
 
 // image setup
 info.avatar_img = new Image();

@@ -2,10 +2,10 @@
  * Title screen
  */
  
-var TITLE_MENU_MAIN = 0;
-var TITLE_MENU_OPTIONS = 1;
+const TITLE_MENU_MAIN    = 0;
+const TITLE_MENU_OPTIONS = 1;
 
-var title = new Object();
+const title = {};
 
 title.img = new Image();
 title.img_loaded = false;
@@ -91,8 +91,7 @@ function title_logic() {
   if (title.menu_confirm == true) {
     if (title.menu_id == TITLE_MENU_MAIN) {
       if (title.menu_selector == 0) {
-        if (avatar_continue) title_continue();
-        else title_start();
+        title_enter_game();
       }
       else if (title.menu_selector == 1) {
         title_set_menu(TITLE_MENU_OPTIONS);
@@ -148,15 +147,8 @@ function title_render() {
   }
 }
 
-function title_start() {
-  gamestate = STATE_DIALOG;
-  shop_set(8);
-  dialog.option[2].msg1 = "Wake up";
-  mazemap_set_music(atlas.maps[mazemap.current_id].music);
-  redraw = true;
-}
-
-function title_continue() {
+// mazemap_set() skips music while gamestate == STATE_TITLE, so we call it explicitly here.
+function title_enter_game() {
   mazemap_set_music(atlas.maps[mazemap.current_id].music);
   gamestate = STATE_EXPLORE;
   redraw = true;

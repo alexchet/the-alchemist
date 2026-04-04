@@ -11,16 +11,16 @@
  * Enemies can follow the player through doors by reading atlas exit data.
  */
 
-var WE_IDLE  = 0;
-var WE_ALERT = 1;
-var WE_DEAD  = 2;
+const WE_IDLE  = 0;
+const WE_ALERT = 1;
+const WE_DEAD  = 2;
 
-var WE_DETECT_RADIUS = 6;   // BFS steps within which an idle enemy detects the player
-var WE_GIVE_UP_SQ    = 20 * 20; // squared euclidean distance at which alert enemy gives up
-var WE_PATROL_DELAY  = 3;   // player steps between patrol moves
-var WE_PATROL_SQ     = 4 * 4;  // squared euclidean max-wander from home
+const WE_DETECT_RADIUS = 6;        // BFS steps within which an idle enemy detects the player
+const WE_GIVE_UP_SQ    = 20 * 20;  // squared euclidean distance at which alert enemy gives up
+const WE_PATROL_DELAY  = 3;        // player steps between patrol moves
+const WE_PATROL_SQ     = 4 * 4;   // squared euclidean max-wander from home
 
-var world_enemies = [];
+let world_enemies = []; // reassigned in we_init()
 
 // ------------------------------------------------------------------- init --
 

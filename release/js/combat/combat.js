@@ -3,34 +3,30 @@
 
  */
 
-var COMBAT_PHASE_INTRO = 0;
-var COMBAT_PHASE_INPUT = 1;
-var COMBAT_PHASE_OFFENSE = 2;
-var COMBAT_PHASE_DEFENSE = 3;
-var COMBAT_PHASE_VICTORY = 4;
-var COMBAT_PHASE_DEFEAT = 5;
+const COMBAT_PHASE_INTRO   = 0;
+const COMBAT_PHASE_INPUT   = 1;
+const COMBAT_PHASE_OFFENSE = 2;
+const COMBAT_PHASE_DEFENSE = 3;
+const COMBAT_PHASE_VICTORY = 4;
+const COMBAT_PHASE_DEFEAT  = 5;
 
-var COMBAT_INTRO_DELAY = 15;
+const COMBAT_INTRO_DELAY = 15;
 
-// object setup
-var combat = new Object();
-
-combat.timer = 0;
-combat.phase = COMBAT_PHASE_INTRO;
-
-combat.enemy = new Object();
-
-combat.offense_action = "";
-combat.offense_result = "";
-combat.defense_action = "";
-combat.defense_result = "";
-combat.reward_result = "";
-combat.gold_treasure = 0;
-
-combat.victory_status = "";
-combat.enemy_hurt = false;
-combat.hero_hurt = false;
-combat.run_success = false;
+const combat = {
+  timer:          0,
+  phase:          COMBAT_PHASE_INTRO,
+  enemy:          {},
+  offense_action: "",
+  offense_result: "",
+  defense_action: "",
+  defense_result: "",
+  reward_result:  "",
+  gold_treasure:  0,
+  victory_status: "",
+  enemy_hurt:     false,
+  hero_hurt:      false,
+  run_success:    false,
+};
 
 function combat_init() {
   combat_clear_messages();

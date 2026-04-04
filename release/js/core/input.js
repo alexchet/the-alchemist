@@ -9,41 +9,27 @@ Use these lines in the init() function to enable:
 
 //---- Key States ---------------------------------------------------
 
-var pressing = new Object();
-pressing.up = false;
-pressing.down = false;
-pressing.left = false;
-pressing.right = false;
-pressing.action = false;
-pressing.mouse = false;
-pressing.tab = false;
+const pressing = { up:false, down:false, left:false, right:false, action:false, mouse:false, tab:false };
 
-var input_lock = new Object();
-input_lock.up = false;
-input_lock.down = false;
-input_lock.left = false;
-input_lock.right = false;
-input_lock.action = false;
-input_lock.mouse = false;
-input_lock.tab = false;
+const input_lock = { up:false, down:false, left:false, right:false, action:false, mouse:false, tab:false };
 
-var mouse_pos = {x:0, y:0};
+let mouse_pos = {x:0, y:0}; // reassigned on each click/touch event
 
 //---- Key Bindings -------------------------------------------------
 
-var KEYCODE_UP     = 38; // arrow up
-var KEYCODE_DOWN   = 40; // arrow down
-var KEYCODE_LEFT   = 37; // arrow left
-var KEYCODE_RIGHT  = 39; // arrow right
-var KEYCODE_ACTION = 32; // space
-var KEYCODE_TAB    = 9;  // tab — auto-explore toggle
+const KEYCODE_UP     = 38; // arrow up
+const KEYCODE_DOWN   = 40; // arrow down
+const KEYCODE_LEFT   = 37; // arrow left
+const KEYCODE_RIGHT  = 39; // arrow right
+const KEYCODE_ACTION = 32; // space
+const KEYCODE_TAB    = 9;  // tab — auto-explore toggle
 
 // secondary
-var ALTCODE_UP     = 87; // w
-var ALTCODE_DOWN   = 83; // s
-var ALTCODE_LEFT   = 65; // a
-var ALTCODE_RIGHT  = 68; // d
-var ALTCODE_ACTION = 13; // enter
+const ALTCODE_UP     = 87; // w
+const ALTCODE_DOWN   = 83; // s
+const ALTCODE_LEFT   = 65; // a
+const ALTCODE_RIGHT  = 68; // d
+const ALTCODE_ACTION = 13; // enter
 
 //---- Input Functions ----------------------------------------------
 

@@ -2,25 +2,24 @@
  Sound effects
  */
  
-var SFX_COUNT = 14;
- 
-var SFX_ATTACK = 0;
-var SFX_MISS = 1;
-var SFX_CRITICAL = 2;
-var SFX_HEAL = 3;
-var SFX_FIRE = 4;
-var SFX_COIN = 5;
-var SFX_HPDRAIN = 6;
-var SFX_MPDRAIN = 7;
-var SFX_RUN = 8;
-var SFX_BLOCKED = 9;
-var SFX_DEFEAT = 10;
-var SFX_BONESHIELD = 11;
-var SFX_CLICK = 12;
-var SFX_UNLOCK = 13;
+const SFX_COUNT = 14;
 
-var sounds = new Object();
-sounds.fx = new Array();
+const SFX_ATTACK    = 0;
+const SFX_MISS      = 1;
+const SFX_CRITICAL  = 2;
+const SFX_HEAL      = 3;
+const SFX_FIRE      = 4;
+const SFX_COIN      = 5;
+const SFX_HPDRAIN   = 6;
+const SFX_MPDRAIN   = 7;
+const SFX_RUN       = 8;
+const SFX_BLOCKED   = 9;
+const SFX_DEFEAT    = 10;
+const SFX_BONESHIELD = 11;
+const SFX_CLICK     = 12;
+const SFX_UNLOCK    = 13;
+
+const sounds = { fx: [] };
 
 function sounds_init() {
   sounds.fx[SFX_ATTACK] = new Audio("sounds/attack.wav");

@@ -4,29 +4,29 @@
  Includes the images for enemies
  */
 
-var ENEMY_COUNT = 8;
+const ENEMY_COUNT = 8;
 
-var ENEMY_SHADOW_TENDRILS = 0;
-var ENEMY_IMP = 1;
-var ENEMY_SHADOW_SOUL = 2;
-var ENEMY_ZOMBIE = 3;
-var ENEMY_SKELETON = 4;
-var ENEMY_DRUID = 5;
-var ENEMY_MIMIC = 6;
-var ENEMY_DEATH_SPEAKER = 7;
+const ENEMY_SHADOW_TENDRILS = 0;
+const ENEMY_IMP              = 1;
+const ENEMY_SHADOW_SOUL      = 2;
+const ENEMY_ZOMBIE           = 3;
+const ENEMY_SKELETON         = 4;
+const ENEMY_DRUID            = 5;
+const ENEMY_MIMIC            = 6;
+const ENEMY_DEATH_SPEAKER    = 7;
 
-var ENEMY_CATEGORY_SHADOW = 0;
-var ENEMY_CATEGORY_DEMON = 1;
-var ENEMY_CATEGORY_UNDEAD = 2;
-var ENEMY_CATEGORY_AUTOMATON = 3;
+const ENEMY_CATEGORY_SHADOW    = 0;
+const ENEMY_CATEGORY_DEMON     = 1;
+const ENEMY_CATEGORY_UNDEAD    = 2;
+const ENEMY_CATEGORY_AUTOMATON = 3;
 
-var enemy = new Object();
-
-enemy.load_counter = 0;
-enemy.img = new Array();
-enemy.img_loaded = false;
-enemy.stats = new Array();
-enemy.render_offset = {x:0, y:0};
+const enemy = {
+  load_counter:  0,
+  img:           [],
+  img_loaded:    false,
+  stats:         [],
+  render_offset: {x:0, y:0},
+};
 
 function enemy_init() {
   for (i=0; i<ENEMY_COUNT; i++) {

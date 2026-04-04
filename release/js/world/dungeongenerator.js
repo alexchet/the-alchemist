@@ -24,9 +24,7 @@
  *   5  = dungeon_ceiling  (walkable)  -- roofed room interior
  */
 
-var atlas = new Object();
-atlas.maps = new Array();
-atlas.procedural = true;
+const atlas = { maps: [], procedural: true };
 
 (function() {
   // Stage dimensions must be odd for the maze algorithm to align correctly.

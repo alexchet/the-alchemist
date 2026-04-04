@@ -3,7 +3,7 @@
  Clint Bellanger 2013
  */
  
-var images = new Object();
+const images = {};
 
 images.init = function(total_image_count) {
   images.total = total_image_count;

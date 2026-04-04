@@ -4,12 +4,13 @@ TileSet class.
 2013 Clint Bellanger
 */
 
-var TILE_COUNT = 19;
-var BACKGROUND_COUNT = 4;
+const TILE_COUNT       = 19;
+const BACKGROUND_COUNT = 4;
 
-var tileset = new Object();
-tileset.tile_img = new Array();
-tileset.background_img = new Array();
+const tileset = {
+  tile_img:       [],
+  background_img: [],
+};
 
 tileset.walkable = new Array();
 tileset.background = new Image();
