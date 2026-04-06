@@ -323,7 +323,7 @@ function explore_render() {
   tileset_background();
   mazemap_render(avatar.x, avatar.y, avatar.facing);
 
-  // Render enemy sprite if one is visible ahead (up to 3 tiles, LOS blocked by walls/doors)
+  // Render enemy sprite if one is visible ahead (up to 3 tiles, LOS blocked by walls/doors).
   var forward = we_get_forward_enemy();
   if (forward !== null) {
     we_render_enemy_at_dist(forward.enemy.type, forward.dist);

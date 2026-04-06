@@ -31,23 +31,27 @@ minimap.cursor_loaded = false;
 // Tiles are marked true when they fall inside the player's visibility cone.
 // Initialized lazily on first update so atlas dimensions are guaranteed ready.
 
-const fog = { discovered: null };
+const fog = { discovered: null, visible: null };
 
 function fog_ensure_init() {
   if (fog.discovered || !atlas.minimap_grid) return;
   fog.discovered = [];
+  fog.visible = [];
   for (var y = 0; y < atlas.minimap_height; y++) {
     fog.discovered[y] = [];
+    fog.visible[y] = [];
     for (var x = 0; x < atlas.minimap_width; x++) {
       fog.discovered[y][x] = false;
+      fog.visible[y][x] = false;
     }
   }
 }
 
-// Mark a global dungeon coord as discovered.
+// Mark a global dungeon coord as discovered and currently visible.
 function fog_mark(gx, gy) {
   if (gx < 0 || gy < 0 || gx >= atlas.minimap_width || gy >= atlas.minimap_height) return;
   fog.discovered[gy][gx] = true;
+  if (fog.visible) fog.visible[gy][gx] = true;
 }
 
 // Called from mazemap_render_tile for each tile drawn to screen.
@@ -66,6 +70,15 @@ function fog_can_see_through(lx, ly) {
 function fog_update() {
   fog_ensure_init();
   if (!fog.discovered) return;
+
+  // Reset currently-visible set each frame.
+  if (fog.visible) {
+    for (var ry = 0; ry < atlas.minimap_height; ry++) {
+      for (var rx = 0; rx < atlas.minimap_width; rx++) {
+        fog.visible[ry][rx] = false;
+      }
+    }
+  }
 
   var x = avatar.x, y = avatar.y;
 
@@ -231,6 +244,22 @@ function minimap_render() {
         minimap_render_icon(draw_x, draw_y, MINIMAP_ICON_WALKABLE);
       } else if (target_tile != 0) {
         minimap_render_icon(draw_x, draw_y, MINIMAP_ICON_NONWALKABLE);
+      }
+    }
+  }
+
+  // Highlight currently-visible tiles in light blue.
+  if (fog.visible) {
+    ctx.fillStyle = "rgba(100, 200, 255, 0.55)";
+    for (var i = 0; i < tiles_x; i++) {
+      for (var j = 0; j < tiles_y; j++) {
+        var gx = start_x + i, gy = start_y + j;
+        if (!fog.visible[gy] || !fog.visible[gy][gx]) continue;
+        var target_tile = minimap_get_tile(gx, gy);
+        if (target_tile === 0) continue; // skip empty space
+        var draw_x = (i * MINIMAP_TILE_PX + left_x) * SCALE;
+        var draw_y = (j * MINIMAP_TILE_PX + top_y)  * SCALE;
+        ctx.fillRect(draw_x, draw_y, MINIMAP_TILE_PX * SCALE, MINIMAP_TILE_PX * SCALE);
       }
     }
   }

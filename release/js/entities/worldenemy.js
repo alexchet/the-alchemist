@@ -209,6 +209,7 @@ function we_get_forward_enemy() {
   return null;
 }
 
+
 // Render an enemy sprite scaled by distance (dist 1=full, 2=half, 3=quarter).
 function we_render_enemy_at_dist(enemy_id, dist) {
   if (!enemy.img_loaded) return;
@@ -224,6 +225,7 @@ function we_render_enemy_at_dist(enemy_id, dist) {
     w  * SCALE,    h  * SCALE
   );
 }
+
 
 function we_get_adjacent_enemies() {
   var result = [];
