@@ -119,6 +119,36 @@ function bitfont_onloadred() {
 }
 
 /**
+ * Render text at half scale (4px tall glyphs).
+ */
+function bitfont_render_small(text, x, y, justify) {
+  if (!bitfont.loaded) return;
+  var uptext = text.toUpperCase();
+  var s = 0.5;
+  var w = bitfont_calcwidth(uptext) * s;
+  if      (justify === JUSTIFY_LEFT)   bitfont.cursor_x = x;
+  else if (justify === JUSTIFY_RIGHT)  bitfont.cursor_x = x - w;
+  else                                 bitfont.cursor_x = x - w / 2;
+
+  var font_color = (bitfont.color === FONT_RED && bitfont.loadedred) ? bitfont.imgred : bitfont.img;
+  for (var i = 0; i < uptext.length; i++) {
+    var ch = uptext.charAt(i);
+    if (ch === " ") {
+      bitfont.cursor_x += bitfont.space * s;
+    } else if (bitfont.glyph_w[ch] !== undefined) {
+      ctx.drawImage(
+        font_color,
+        bitfont.glyph_x[ch] * PRESCALE, 0,
+        bitfont.glyph_w[ch] * PRESCALE, bitfont.height * PRESCALE,
+        bitfont.cursor_x * SCALE, y * SCALE,
+        bitfont.glyph_w[ch] * SCALE * s, bitfont.height * SCALE * s
+      );
+      bitfont.cursor_x += (bitfont.glyph_w[ch] + bitfont.kerning) * s;
+    }
+  }
+}
+
+/**
  * Render text left-justified at x,y
  */
 function bitfont_render(text, x, y, justify) {

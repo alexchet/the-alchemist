@@ -10,7 +10,6 @@ const explore = {
   gold_value:     0,
   auto:           false,
   auto_timer:     0,
-  auto_steps:     0,
   combat_action:  "",
   combat_result:  "",
   enemy_name:     "",
@@ -204,7 +203,6 @@ function explore_logic() {
     input_lock.tab = true;
     explore.auto = !explore.auto;
     explore.auto_timer = 0;
-    if (explore.auto) explore.auto_steps = 0;
     redraw = true;
   }
 
@@ -241,7 +239,6 @@ function explore_logic() {
   if (explore.auto && !avatar.moved) {
     if (auto_all_discovered()) {
       explore.auto = false;
-      explore.message = "Explored in " + explore.auto_steps + " steps";
       redraw = true;
     } else if (explore.auto_timer > 0) {
       explore.auto_timer--;
@@ -253,7 +250,6 @@ function explore_logic() {
       } else {
         auto_face_toward(step.dx, step.dy);
         avatar_move(step.dx, step.dy);
-        explore.auto_steps++;
         explore.auto_timer = AUTO_STEP_DELAY;
         if (avatar.moved) player_acted = true;
       }
@@ -323,11 +319,20 @@ function explore_render() {
   tileset_background();
   mazemap_render(avatar.x, avatar.y, avatar.facing);
 
-  // Render enemy sprite if one is visible ahead (up to 3 tiles, LOS blocked by walls/doors).
-  var forward = we_get_forward_enemy();
-  if (forward !== null) {
-    we_render_enemy_at_dist(forward.enemy.type, forward.dist);
-    bitfont_render(enemy.stats[forward.enemy.type].name, 80, 2, JUSTIFY_CENTER);
+  // Render visible enemies using tile-style perspective.
+  var visible_enemies = we_get_visible_enemies();
+  for (var vi = 0; vi < visible_enemies.length; vi++) {
+    we_render_enemy_tile(visible_enemies[vi].enemy.type, visible_enemies[vi].position);
+  }
+  // Show name of the nearest center-column enemy, or any visible enemy.
+  var named_enemy = null;
+  for (var vi = 0; vi < visible_enemies.length; vi++) {
+    var p = visible_enemies[vi].position;
+    if (p === 9 || p === 4 || p === 7 || p === 8) { named_enemy = visible_enemies[vi].enemy; break; }
+  }
+  if (named_enemy === null && visible_enemies.length > 0) named_enemy = visible_enemies[0].enemy;
+  if (named_enemy !== null) {
+    bitfont_render(enemy.stats[named_enemy.type].name, 80, 2, JUSTIFY_CENTER);
   } else {
     bitfont_render(avatar.facing, 80, 2, JUSTIFY_CENTER);
   }
@@ -336,9 +341,6 @@ function explore_render() {
   action_render();
   info_render_hpmp();
 
-  if (explore.auto) {
-    bitfont_render(explore.auto_steps + " steps", 158, 2, JUSTIFY_RIGHT);
-  }
 
   if (OPTIONS.minimap) {
     minimap_render();
@@ -346,19 +348,19 @@ function explore_render() {
 
   // Kill message
   if (explore.kill_timer > 0) {
-    bitfont_render(explore.kill_message, 80, 90, JUSTIFY_CENTER);
+    bitfont_render_small(explore.kill_message, 80, 92, JUSTIFY_CENTER);
   }
 
   // Player combat messages (top-left)
   if (explore.combat_action !== "") {
-    bitfont_render("You: " + explore.combat_action, 2, 20, JUSTIFY_LEFT);
-    if (explore.combat_result !== "") bitfont_render(explore.combat_result, 2, 30, JUSTIFY_LEFT);
+    bitfont_render_small("You: " + explore.combat_action, 2, 20, JUSTIFY_LEFT);
+    if (explore.combat_result !== "") bitfont_render_small(explore.combat_result, 2, 26, JUSTIFY_LEFT);
   }
 
   // Enemy combat messages (top-left, below player's)
   if (explore.enemy_name !== "") {
-    bitfont_render(explore.enemy_name + ": " + explore.enemy_action, 2, 45, JUSTIFY_LEFT);
-    if (explore.enemy_result !== "") bitfont_render(explore.enemy_result, 2, 55, JUSTIFY_LEFT);
+    bitfont_render_small(explore.enemy_name + ": " + explore.enemy_action, 2, 35, JUSTIFY_LEFT);
+    if (explore.enemy_result !== "") bitfont_render_small(explore.enemy_result, 2, 41, JUSTIFY_LEFT);
   }
 
   // Map / explore message

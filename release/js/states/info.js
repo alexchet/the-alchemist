@@ -188,9 +188,9 @@ function info_render_itemlist() {
   
 }
 
-function info_render_hpmp() { 
-  bitfont_render("HP " + avatar.hp + "/" + avatar.max_hp, 2, 100, JUSTIFY_LEFT);
-  bitfont_render("MP " + avatar.mp + "/" + avatar.max_mp, 2, 110, JUSTIFY_LEFT); 
+function info_render_hpmp() {
+  bitfont_render_small("HP " + avatar.hp + "/" + avatar.max_hp, 2, 103, JUSTIFY_LEFT);
+  bitfont_render_small("MP " + avatar.mp + "/" + avatar.max_mp, 2, 110, JUSTIFY_LEFT);
 }
 
 function info_render_gold() {

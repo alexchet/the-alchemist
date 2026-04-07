@@ -45,6 +45,8 @@ function we_init() {
         hp:           enemy.stats[ep.type].hp,
         state:        WE_IDLE,
         patrol_timer: Math.floor(Math.random() * WE_PATROL_DELAY),
+        flank:        null,
+        move_timer:   0,
       });
     }
   }
@@ -180,49 +182,66 @@ function we_get_front_enemy() {
   return null;
 }
 
-// Returns {enemy, dist} for the nearest enemy in the forward line of sight
-// (up to 3 tiles). Stops at walls or doors. Returns null if none visible.
-function we_get_forward_enemy() {
-  var dx = 0, dy = 0;
-  if      (avatar.facing === 'north') dy = -1;
-  else if (avatar.facing === 'south') dy =  1;
-  else if (avatar.facing === 'west')  dx = -1;
-  else                                dx =  1;
+// Returns all enemies visible in the 13-position cone, each with its draw position index.
+// Iterates positions in back-to-front order (matching mazemap_render draw order).
+function we_get_visible_enemies() {
+  var x = avatar.x, y = avatar.y, f = avatar.facing;
+  var offsets; // [dx, dy, position_index]
+  if (f === 'north') {
+    offsets = [
+      [-2,-2,0],[2,-2,1],[-1,-2,2],[1,-2,3],[0,-2,4],
+      [-2,-1,5],[2,-1,6],[-1,-1,7],[1,-1,8],[0,-1,9],
+      [-1,0,10],[1,0,11],[0,0,12]
+    ];
+  } else if (f === 'south') {
+    offsets = [
+      [2,2,0],[-2,2,1],[1,2,2],[-1,2,3],[0,2,4],
+      [2,1,5],[-2,1,6],[1,1,7],[-1,1,8],[0,1,9],
+      [1,0,10],[-1,0,11],[0,0,12]
+    ];
+  } else if (f === 'west') {
+    offsets = [
+      [-2,2,0],[-2,-2,1],[-2,1,2],[-2,-1,3],[-2,0,4],
+      [-1,2,5],[-1,-2,6],[-1,1,7],[-1,-1,8],[-1,0,9],
+      [0,1,10],[0,-1,11],[0,0,12]
+    ];
+  } else { // east
+    offsets = [
+      [2,-2,0],[2,2,1],[2,-1,2],[2,1,3],[2,0,4],
+      [1,-2,5],[1,2,6],[1,-1,7],[1,1,8],[1,0,9],
+      [0,-1,10],[0,1,11],[0,0,12]
+    ];
+  }
 
-  for (var dist = 1; dist <= 3; dist++) {
-    var tx = avatar.x + dx * dist;
-    var ty = avatar.y + dy * dist;
-    var tile = mazemap_get_tile(tx, ty);
-
-    if (!tileset.walkable[tile]) return null; // wall blocks LOS
-
-    for (var i = 0; i < world_enemies.length; i++) {
-      var e = world_enemies[i];
+  var result = [];
+  for (var i = 0; i < offsets.length; i++) {
+    var tx = x + offsets[i][0], ty = y + offsets[i][1];
+    for (var j = 0; j < world_enemies.length; j++) {
+      var e = world_enemies[j];
       if (e.state === WE_DEAD) continue;
       if (e.map_id === avatar.map_id && e.x === tx && e.y === ty) {
-        return { enemy: e, dist: dist };
+        result.push({ enemy: e, position: offsets[i][2] });
+        break;
       }
     }
-
-    if (tile === 3) return null; // door blocks further sight
   }
-  return null;
+  return result;
 }
 
-
-// Render an enemy sprite scaled by distance (dist 1=full, 2=half, 3=quarter).
-function we_render_enemy_at_dist(enemy_id, dist) {
-  if (!enemy.img_loaded) return;
-  var w, h, ox, oy;
-  if      (dist === 1) { w = 160; h = 120; ox = 0;  oy = 0;  }
-  else if (dist === 2) { w = 80;  h = 60;  ox = 40; oy = 30; }
-  else                 { w = 40;  h = 30;  ox = 60; oy = 45; }
+// Render an enemy's tile sprite at a given cone draw position.
+// Uses the same sprite sheet format as the tileset.
+// No-ops silently if no tile image is registered for this enemy type.
+function we_render_enemy_tile(enemy_type, position) {
+  var img = enemy.tile_img[enemy_type];
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+  var area = tileset.draw_area[position];
   ctx.drawImage(
-    enemy.img[enemy_id],
-    0,             0,
-    160 * PRESCALE, 120 * PRESCALE,
-    ox * SCALE,    oy * SCALE,
-    w  * SCALE,    h  * SCALE
+    img,
+    area.src_x * PRESCALE, area.src_y * PRESCALE,
+    area.width * PRESCALE, area.height * PRESCALE,
+    (area.dest_x + tileset.render_offset.x) * SCALE,
+    (area.dest_y + tileset.render_offset.y) * SCALE,
+    area.width * SCALE, area.height * SCALE
   );
 }
 
@@ -338,6 +357,36 @@ function we_kill_enemy(e) {
 
 // --------------------------------------------------------------- enemy AI --
 
+// Assign a preferred approach direction to an enemy when it first alerts.
+// Priority: behind player > player's left > player's right > front.
+// Each direction can only be claimed by one enemy at a time.
+function we_assign_flank(e) {
+  var behind, side_l, side_r, front;
+  if      (avatar.facing === 'north') { behind={dx:0,dy:1};  side_l={dx:-1,dy:0}; side_r={dx:1,dy:0};  front={dx:0,dy:-1}; }
+  else if (avatar.facing === 'south') { behind={dx:0,dy:-1}; side_l={dx:1,dy:0};  side_r={dx:-1,dy:0}; front={dx:0,dy:1};  }
+  else if (avatar.facing === 'east')  { behind={dx:-1,dy:0}; side_l={dx:0,dy:-1}; side_r={dx:0,dy:1};  front={dx:1,dy:0};  }
+  else                                { behind={dx:1,dy:0};  side_l={dx:0,dy:1};  side_r={dx:0,dy:-1}; front={dx:-1,dy:0}; }
+
+  var priority = [behind, side_l, side_r, front];
+
+  var claimed = [];
+  for (var i = 0; i < world_enemies.length; i++) {
+    var o = world_enemies[i];
+    if (o === e || o.state !== WE_ALERT || !o.flank) continue;
+    claimed.push(o.flank);
+  }
+
+  for (var i = 0; i < priority.length; i++) {
+    var d = priority[i];
+    var taken = false;
+    for (var j = 0; j < claimed.length; j++) {
+      if (claimed[j].dx === d.dx && claimed[j].dy === d.dy) { taken = true; break; }
+    }
+    if (!taken) { e.flank = d; return; }
+  }
+  e.flank = behind; // 5th+ enemy: converge from behind
+}
+
 // Called once per player action.
 function we_step() {
   var pg = we_to_global(avatar.map_id, avatar.x, avatar.y);
@@ -352,6 +401,9 @@ function we_step() {
     if (e.state === WE_IDLE) {
       if (we_local_dist_sq(e) <= WE_DETECT_RADIUS * WE_DETECT_RADIUS) {
         e.state = WE_ALERT;
+        we_assign_flank(e);
+        // Stagger: enemies farther away wait before first move, closer ones act sooner.
+        e.move_timer = Math.max(0, Math.floor(Math.sqrt(we_local_dist_sq(e))) - 1);
       }
       if (e.state === WE_IDLE) { we_patrol(e); continue; }
     }
@@ -360,9 +412,11 @@ function we_step() {
     if (dsq > WE_GIVE_UP_SQ) {
       e.state = WE_IDLE;
       e.patrol_timer = 0;
+      e.flank = null;
       continue;
     }
 
+    // Attack is never paced — always strike when adjacent.
     if (e.map_id === avatar.map_id) {
       var ddx = e.x - avatar.x, ddy = e.y - avatar.y;
       if (ddx * ddx + ddy * ddy === 1) {
@@ -371,7 +425,26 @@ function we_step() {
       }
     }
 
-    var step = we_bfs_step_toward(eg.x, eg.y, pg.x, pg.y);
+    // Movement pacing — skip turn if timer not expired.
+    if (e.move_timer > 0) {
+      e.move_timer--;
+      continue;
+    }
+    e.move_timer = enemy.stats[e.type].speed - 1;
+
+    // BFS toward assigned flank tile (adjacent to player from preferred direction).
+    // Fall back to player position if the flank tile is impassable.
+    var tg;
+    if (e.flank) {
+      var ftx = avatar.x + e.flank.dx;
+      var fty = avatar.y + e.flank.dy;
+      tg = we_to_global(avatar.map_id, ftx, fty);
+      if (!we_passable(tg.x, tg.y)) tg = pg;
+    } else {
+      tg = pg;
+    }
+
+    var step = we_bfs_step_toward(eg.x, eg.y, tg.x, tg.y);
     if (step) we_move_enemy(e, step.dx, step.dy);
   }
 }
@@ -479,6 +552,8 @@ function we_respawn_all() {
     e.y            = e.home_y;
     e.hp           = enemy.stats[e.type].hp;
     e.patrol_timer = Math.floor(Math.random() * WE_PATROL_DELAY);
+    e.flank        = null;
+    e.move_timer   = 0;
   }
 }
 

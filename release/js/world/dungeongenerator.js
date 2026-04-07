@@ -593,10 +593,7 @@ const atlas = { maps: [], procedural: true };
 
   // Place enemies in rooms (skip rooms[0] = safe start room).
   // Interior positions are local x: 1..room.w, y: 1..room.h.
-  var ENEMY_POOL = [
-    ENEMY_SHADOW_TENDRILS, ENEMY_IMP, ENEMY_SHADOW_SOUL,
-    ENEMY_ZOMBIE, ENEMY_SKELETON, ENEMY_DRUID
-  ];
+  var ENEMY_POOL = [ENEMY_ZOMBIE];
   for (var r = 1; r < rooms.length; r++) {
     var room    = rooms[r];
     var map_id  = r + 1;
